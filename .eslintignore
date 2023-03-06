@@ -1,0 +1,5 @@
+.history
+node_modules
+vite.config.ts
+.eslintrc.cjs
+src/proto
