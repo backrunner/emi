@@ -25,7 +25,7 @@ export interface ChatGPTUsage {
 export interface ChatGPTChoice {
   index: number;
   finish_reason: string;
-  messages: ChatGPTMessages;
+  message: ChatGPTMessage;
 }
 
 export interface ChatGPTResponse {
@@ -33,6 +33,6 @@ export interface ChatGPTResponse {
   object: string;
   created: number;
   model: string;
-  choices: ChatGPTChoice;
+  choices: ChatGPTChoice[];
   usage: ChatGPTUsage;
 }
