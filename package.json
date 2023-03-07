@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check build-only",
-    "build:proto": "node ./src/proto/build.js",
+    "build:proto": "node ./src/app/proto/build.js",
     "prebuild": "npm run build:proto",
     "preview": "vite preview",
     "build-only": "vite build",
