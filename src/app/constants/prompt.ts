@@ -10,7 +10,7 @@ export const INITIAL_PROMPT = [
   },
   {
     role: 'system',
-    content: '对话上下文：\n对话开始时间：{nowTime}',
+    content: '对话开始时间：{nowTime}',
   },
   {
     role: 'system',

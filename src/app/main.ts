@@ -1,10 +1,14 @@
 import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
 import { handleChatIPCEvents } from './lib/ipc/chat';
+import ProcessManager, { launchBinaries } from './lib/process/manager';
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // init program
   handleChatIPCEvents();
+
+  // launch binaries
+  await launchBinaries();
 
   // create window
   const win = new BrowserWindow({
@@ -22,4 +26,8 @@ app.whenReady().then(() => {
   } else {
     win.loadFile('dist/index.html');
   }
+});
+
+app.on('before-quit', () => {
+  ProcessManager.killAll();
 });

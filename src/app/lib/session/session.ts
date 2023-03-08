@@ -8,6 +8,9 @@ export class ChatSession {
   public id: string = randomUUID();
   public messages: ChatGPTMessages = getInitalPrompt();
 
+  // flag which message has been persisted
+  private persistedFlags: Record<string, boolean> = {};
+
   /**
    * Perform a chat action
    */
