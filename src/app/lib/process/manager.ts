@@ -1,7 +1,6 @@
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import process from 'node:process';
 import childProcess, { type ExecOptions } from 'node:child_process';
 import { platform } from 'node:os';
 
@@ -24,7 +23,7 @@ export default class ProcessManager {
         return;
       }
       console.error(`[process] ${executable} error:\n${data}`);
-    })
+    });
   }
 
   public static killAll() {

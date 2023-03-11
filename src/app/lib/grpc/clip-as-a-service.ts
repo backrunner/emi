@@ -7,6 +7,7 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import type { ProtoGrpcType } from '@/app/proto/clip-as-service-rs/encoder';
 import type { EncoderClient } from '@/app/proto/clip-as-service-rs/encoder/Encoder';
+import type { Embedding } from '@/app/proto/clip-as-service-rs/encoder/Embedding';
 
 const SERVICE_HOST = 'localhost:50051';
 
@@ -41,7 +42,7 @@ export class ClipClient {
     this.client?.close();
   }
 
-  public encodeText(text: string) {
+  public encodeText(text: string): Promise<number[]> {
     if (!this.client) {
       throw new Error('Client is not initialized.');
     }
@@ -57,13 +58,17 @@ export class ClipClient {
           if (err) {
             return reject(err);
           }
-          resolve(value?.embedding?.[0]);
+          const point = value?.embedding?.[0]?.point;
+          if (!point) {
+            return reject(new Error('Cannot receive point data from the service.'));
+          }
+          resolve(point);
         },
       );
     });
   }
 
-  public encodeTexts(texts: string[]) {
+  public encodeTexts(texts: string[]): Promise<Embedding[]> {
     if (!this.client) {
       throw new Error('Client is not initialized.');
     }
@@ -79,7 +84,7 @@ export class ClipClient {
           if (err) {
             return reject(err);
           }
-          resolve(value?.embedding);
+          resolve(value?.embedding as Embedding[]);
         },
       );
     });

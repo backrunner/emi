@@ -10,6 +10,7 @@ import type { ProtoGrpcType } from '@/app/proto/qdrant/qdrant';
 import type { CollectionsClient } from '@/app/proto/qdrant/qdrant/Collections';
 import type { PointsClient } from '@/app/proto/qdrant/qdrant/Points';
 import type { ListCollectionsResponse } from '@/app/proto/qdrant/qdrant/ListCollectionsResponse';
+import type { PointStruct } from '@/app/proto/qdrant/qdrant/PointStruct';
 import { userConfigStore } from '@/app/store';
 
 const SERVICE_HOST = 'localhost:6334';
@@ -103,6 +104,27 @@ export class QdrantClient {
             return reject(err);
           }
           console.debug(`[qdrant] collection ${name} created.`);
+          resolve();
+        },
+      );
+    });
+  }
+
+  public async upsertPoints(collectionName: string, points: PointStruct) {
+    if (!this.pointsClient) {
+      throw new Error('Points client is not initialized.');
+    }
+    await new Promise<void>((resolve, reject) => {
+      this.pointsClient?.Upsert(
+        {
+          collectionName: collectionName,
+          points: [points],
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          console.debug(`[qdrant] point upserted to ${collectionName}.`);
           resolve();
         },
       );

@@ -18,7 +18,7 @@ export const INITIAL_PROMPT = [
   },
   {
     role: 'assistant',
-    content: 'Hello Hello，这里是Emi~，请问有什么可以帮助您？',
+    content: '你好，我是元气AI少女Emi~，请问有什么可以帮助到您？',
   },
 ];
 
@@ -28,5 +28,5 @@ export const getInitalPrompt = () => {
       ...item,
       content: item.content.replace('{nowTime}', dayjs().format('YYYY-MM-DD HH:mm:ss')),
     };
-  })as ChatGPTMessages;
+  }) as ChatGPTMessages;
 };
