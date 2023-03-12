@@ -27,7 +27,7 @@ export class ClipClient {
     }
     return new Promise((resolve, reject) => {
       const clipClient = new proto.encoder.Encoder(SERVICE_HOST, grpc.credentials.createInsecure());
-      clipClient.waitForReady(dayjs().add(10, 'second').toDate(), (err?: Error) => {
+      clipClient.waitForReady(dayjs().add(30, 'second').toDate(), (err?: Error) => {
         if (err) {
           return reject(err);
         }
@@ -62,6 +62,7 @@ export class ClipClient {
           if (!point) {
             return reject(new Error('Cannot receive point data from the service.'));
           }
+          console.debug('[clip] point data received.', point.length);
           resolve(point);
         },
       );

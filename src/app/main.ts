@@ -28,7 +28,7 @@ app.whenReady().then(async () => {
 
   // create window
   const win = new BrowserWindow({
-    title: 'Nami',
+    title: 'Emi',
     width: 480,
     height: 800,
     webPreferences: {

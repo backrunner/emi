@@ -11,6 +11,9 @@ import type { CollectionsClient } from '@/app/proto/qdrant/qdrant/Collections';
 import type { PointsClient } from '@/app/proto/qdrant/qdrant/Points';
 import type { ListCollectionsResponse } from '@/app/proto/qdrant/qdrant/ListCollectionsResponse';
 import type { PointStruct } from '@/app/proto/qdrant/qdrant/PointStruct';
+import type { SearchResponse } from '@/app/proto/qdrant/qdrant/SearchResponse';
+import type { ScoredPoint } from '@/app/proto/qdrant/qdrant/ScoredPoint';
+
 import { userConfigStore } from '@/app/store';
 
 const SERVICE_HOST = 'localhost:6334';
@@ -18,6 +21,8 @@ const SERVICE_HOST = 'localhost:6334';
 const packageDefinition = protoLoader.loadSync(path.resolve(app.getAppPath(), './src/app/proto/qdrant/qdrant.proto'));
 
 const proto = grpc.loadPackageDefinition(packageDefinition) as unknown as ProtoGrpcType;
+
+const VECTOR_SIZE = 512;
 
 export class QdrantClient {
   private collectionsClient?: CollectionsClient;
@@ -31,7 +36,7 @@ export class QdrantClient {
     promises.push(
       new Promise((resolve, reject) => {
         const collectionsClient = new proto.qdrant.Collections(SERVICE_HOST, grpc.credentials.createInsecure());
-        collectionsClient.waitForReady(dayjs().add(10, 'second').toDate(), (err?: Error) => {
+        collectionsClient.waitForReady(dayjs().add(30, 'second').toDate(), (err?: Error) => {
           if (err) {
             return reject(err);
           }
@@ -41,7 +46,7 @@ export class QdrantClient {
       }),
       new Promise((resolve, reject) => {
         const pointsClient = new proto.qdrant.Points(SERVICE_HOST, grpc.credentials.createInsecure());
-        pointsClient.waitForReady(dayjs().add(10, 'second').toDate(), (err?: Error) => {
+        pointsClient.waitForReady(dayjs().add(30, 'second').toDate(), (err?: Error) => {
           if (err) {
             return reject(err);
           }
@@ -94,7 +99,7 @@ export class QdrantClient {
           timeout: 30,
           vectorsConfig: {
             params: {
-              size: 768,
+              size: VECTOR_SIZE,
               distance: 'Cosine',
             },
           },
@@ -129,5 +134,35 @@ export class QdrantClient {
         },
       );
     });
+  }
+
+  public async searchPoints(collectionName: string, vector: number[]) {
+    if (!this.pointsClient) {
+      throw new Error('Points client is not initialized.');
+    }
+    const res = await new Promise<ScoredPoint[]>((resolve, reject) => {
+      this.pointsClient?.Search(
+        {
+          collectionName,
+          vector,
+          withPayload: {
+            enable: true,
+          },
+          scoreThreshold: 0.7,
+          limit: 5,
+        },
+        (err, value?: SearchResponse) => {
+          if (err) {
+            return reject(err);
+          }
+          if (!value) {
+            return [];
+          }
+          const { result } = value;
+          resolve(result as ScoredPoint[]);
+        },
+      );
+    });
+    return res;
   }
 }
