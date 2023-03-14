@@ -21,11 +21,14 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.8.11",
     "@grpc/proto-loader": "^0.7.5",
+    "better-sqlite3": "^8.2.0",
     "dayjs": "^1.11.7",
     "electron-store": "^8.1.0",
     "lodash": "^4.17.21",
     "marqo": "^0.2.0",
     "pinia": "^2.0.32",
+    "reflect-metadata": "^0.1.13",
+    "typeorm": "^0.3.12",
     "vue": "^3.2.47",
     "vue-router": "^4.1.6"
   },

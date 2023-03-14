@@ -145,9 +145,6 @@ export class QdrantClient {
         {
           collectionName,
           vector,
-          withPayload: {
-            enable: true,
-          },
           scoreThreshold: 0.7,
           limit: 5,
         },
