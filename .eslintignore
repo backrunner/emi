@@ -3,3 +3,5 @@ node_modules
 vite.config.ts
 .eslintrc.cjs
 src/app/proto
+dist
+dist-electron

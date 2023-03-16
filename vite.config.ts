@@ -18,6 +18,11 @@ export default defineConfig({
               '@': fileURLToPath(new URL('./src', import.meta.url)),
             },
           },
+          build: {
+            rollupOptions: {
+              external: ['better-sqlite3', 'typeorm'],
+            },
+          },
         },
       },
       {
