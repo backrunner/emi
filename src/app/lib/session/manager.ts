@@ -19,17 +19,10 @@ export class ChatSessionManager {
     const session = new ChatSession();
     this.sessions.push(session);
     console.debug(`[session] New session created: ${session.id}`);
-    this.currentSession = session;
-    return session;
-  }
-
-  public static switchSession(id: string) {
-    const session = this.sessions.find((session) => session.id === id);
-    if (!session) {
-      throw new Error('Session not found.');
+    if (this.currentSession) {
+      this.currentSession.close();
     }
     this.currentSession = session;
-    console.debug(`[session] Switched to session: ${session.id}`);
     return session;
   }
 

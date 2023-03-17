@@ -5,8 +5,8 @@ import ProcessManager, { launchBinaries } from './lib/process/manager';
 import { QdrantClient } from './lib/grpc/qdrant';
 import { ClipClient } from './lib/grpc/clip-as-a-service';
 import { initKnowledgeBase } from './lib/knowledge';
-import { ChatSessionManager } from './lib/session/sessionManager';
-import { AppDataSource } from './data-source';
+import { ChatSessionManager } from './lib/session/manager';
+import { initDataSource } from './data-source';
 
 app.whenReady().then(async () => {
   // launch binaries
@@ -25,7 +25,7 @@ app.whenReady().then(async () => {
   ChatSessionManager.setGrpcClients({ qdrant: qdrantClient, clip: clipClient });
 
   // init sql db
-  await AppDataSource.initialize();
+  await initDataSource();
 
   // init program
   handleChatIPCEvents();

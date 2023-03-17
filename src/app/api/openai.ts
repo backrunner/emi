@@ -31,13 +31,13 @@ const sendChatGPTRequest = (payload: ChatGPTPayload) => {
       });
       response.on('aborted', () => {
         reject(new Error('Request aborted'));
-      })
+      });
     });
     request.setHeader('Content-Type', 'application/json');
     request.setHeader('Authorization', `Bearer ${secureStore.get('openai_api_key')}`);
     request.write(JSON.stringify(payload));
     request.end();
-  })
+  });
 };
 
 export const requestCompletions = async (messages: ChatGPTMessages) => {
@@ -50,5 +50,8 @@ export const requestCompletions = async (messages: ChatGPTMessages) => {
   }
   // trim the responsed content
   completedMessage.content = completedMessage.content.trim();
-  return completedMessage;
+  return {
+    message: completedMessage,
+    usage: res.usage,
+  };
 };

@@ -1,8 +1,8 @@
-import { ipcMain } from "electron";
-import { ChatSessionManager } from "../session/sessionManager";
+import { ipcMain } from 'electron';
+import { ChatSessionManager } from '../session/manager';
 
 export const handleChatIPCEvents = () => {
-  ipcMain.handle('session:create', (event) => {
+  ipcMain.handle('session:create', () => {
     const session = ChatSessionManager.createSession();
     return {
       id: session.id,
@@ -10,7 +10,7 @@ export const handleChatIPCEvents = () => {
     };
   });
 
-  ipcMain.handle('chat:complete', async (event, message: string) => {
+  ipcMain.handle('chat:complete', async (_, message: string) => {
     const currentSession = ChatSessionManager.getCurrentSession();
     if (!currentSession) {
       throw new Error('Cannot get the current session.');
@@ -21,4 +21,4 @@ export const handleChatIPCEvents = () => {
       message: res,
     };
   });
-}
+};

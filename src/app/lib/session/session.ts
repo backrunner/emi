@@ -1,13 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import dayjs from 'dayjs';
+
 import { requestCompletions } from '@/app/api/openai';
-import type { ChatGPTMessage, ChatGPTMessages, ChatGPTRole } from '@/types/openai';
 import { getInitalPrompt } from '@/app/constants/prompt';
-import { ChatSessionManager } from './sessionManager';
-import type { ClipClient } from '../grpc/clip-as-a-service';
-import type { QdrantClient } from '../grpc/qdrant';
 import { HISTORY_COLLECTION } from '@/app/constants/knowledge';
 import type { ScoredPoint } from '@/app/proto/qdrant/qdrant/ScoredPoint';
+import { ChatHistory } from '@/app/entities/ChatHistory';
+import { Usage } from '@/app/entities/Usage';
+import { getDataSource } from '@/app/data-source';
+import type { ChatGPTMessage } from '@/types/openai';
+
+import type { ClipClient } from '../grpc/clip-as-a-service';
+import type { QdrantClient } from '../grpc/qdrant';
+import { UsageManager } from '../usage/manager';
+
+import { ChatSessionManager } from './manager';
+import { Session } from '@/app/entities/Session';
 
 interface InternalChatMessage extends ChatGPTMessage {
   id?: string;
@@ -19,7 +27,12 @@ type InternalChatMessages = InternalChatMessage[];
 
 export class ChatSession {
   public id: string = randomUUID();
+  public startedAt: number = Date.now();
   public messages: InternalChatMessages = getInitalPrompt();
+
+  public constructor() {
+    this.createOnDatabase();
+  }
 
   /**
    * Perform a chat action
@@ -40,12 +53,14 @@ export class ChatSession {
       console.error('[session] search history by vector failed:', err);
     }
     // send to openai for completion
+    let completeRes;
     let completed;
     try {
-      completed = await requestCompletions([
+      completeRes = await requestCompletions([
         ...this.messages.map((message) => this.dehydrateMessage(message)),
         wrappedMessage,
       ]);
+      completed = completeRes.message;
     } catch (err: any) {
       console.error('Failed to complete the chat content:', err);
       return {
@@ -58,12 +73,19 @@ export class ChatSession {
       return;
     }
     completed.content = `(${dayjs().format('YYYY-MM-DD HH:mm:ss')})${completed.content}`;
-    this.messages.push(...[wrappedMessage, completed].map((message) => this.hydrateMessage(message)));
+    const hydrated = [wrappedMessage, completed].map((message) => this.hydrateMessage(message));
+    UsageManager.setChatUsage(hydrated[1].id, completeRes.usage);
+    this.messages.push(...hydrated);
     // after a chat interaction completed, persist related messages
     this.persist().catch((err) => {
       console.error('[session] Failed to persist chat messages', err);
     });
     return completed;
+  }
+
+  public async close() {
+    const endedAt = Date.now();
+    await getDataSource().createQueryBuilder().update().where('id = :id', { id: this.id }).set({ endedAt }).execute();
   }
 
   /**
@@ -144,8 +166,8 @@ export class ChatSession {
   private async persist() {
     const persisted: string[] = [];
     // persist all messages to qdrant
-    await Promise.all(
-      this.messages.map(async (message, index) => {
+    await Promise.allSettled([
+      ...this.messages.map(async (message) => {
         if (message.persisted || message.role === 'system' || !message.id) {
           return;
         }
@@ -188,7 +210,23 @@ export class ChatSession {
         persisted.push(message.id);
         console.debug('[session] message has been added to qdrant:', message.id);
       }),
-    );
+      ...this.messages.map(async (message) => {
+        if (message.persisted || !message.id) {
+          return;
+        }
+        // build history entity
+        const history = new ChatHistory();
+        history.content = message.content.split(')')?.[1];
+        history.created = message.created || Date.now();
+        history.role = message.role;
+        history.uuid = message.id;
+        history.sessionId = ChatSessionManager.getCurrentSession()?.id || '';
+        history.usage = new Usage(UsageManager.getChatUsage(message.id));
+        // insert to database
+        const dataSource = getDataSource();
+        await dataSource.createQueryBuilder().insert().into(ChatHistory).values(history).execute();
+      }),
+    ]);
     // rewrite the local flag
     this.messages = this.messages.map((message) => {
       if (!message.id) {
@@ -202,5 +240,12 @@ export class ChatSession {
       }
       return message;
     });
+  }
+
+  private async createOnDatabase() {
+    const session = new Session();
+    session.uuid = this.id;
+    session.startedAt = this.startedAt;
+    await getDataSource().createQueryBuilder().insert().into(Session).values(session).execute();
   }
 }

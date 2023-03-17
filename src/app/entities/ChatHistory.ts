@@ -1,5 +1,5 @@
-import type { ChatGPTRole } from '@/types/openai';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import type { ChatGPTRole } from '@/types/openai';
 import { Usage } from './Usage';
 
 @Entity()
@@ -23,5 +23,5 @@ export class ChatHistory {
   public sessionId!: string;
 
   @Column(() => Usage)
-  public usage!: Usage;
+  public usage?: Usage;
 }

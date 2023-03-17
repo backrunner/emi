@@ -16,7 +16,8 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "remove-storage": "node ./scripts/remove-storage.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.8.12",
