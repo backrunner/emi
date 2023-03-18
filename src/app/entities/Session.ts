@@ -11,6 +11,6 @@ export class Session {
   @Column({ type: 'integer' })
   public startedAt!: number;
 
-  @Column({ type: 'integer' })
-  public endedAt!: number;
+  @Column({ type: 'integer', nullable: true })
+  public endedAt?: number;
 }

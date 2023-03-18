@@ -11,12 +11,12 @@ export class ChatSummary {
   @Column({ type: 'varchar', length: 255 })
   public sessionId!: string;
 
-  @Column({ type: 'string' })
+  @Column({ type: 'text' })
   public content!: string;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', nullable: true })
   public startId?: number;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', nullable: true })
   public endId?: number;
 }

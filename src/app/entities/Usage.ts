@@ -2,13 +2,13 @@ import { Column } from 'typeorm';
 import type { ChatGPTUsage } from '@/types/openai';
 
 export class Usage {
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', default: 0 })
   public promptTokens!: number;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', default: 0 })
   public completionTokens!: number;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', default: 0 })
   public totalTokens!: number;
 
   public constructor(messageUsage?: ChatGPTUsage) {

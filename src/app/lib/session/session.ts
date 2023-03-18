@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import dayjs from 'dayjs';
 
 import { requestCompletions } from '@/app/api/openai';
 import { getInitalPrompt } from '@/app/constants/prompt';
@@ -7,6 +6,7 @@ import { HISTORY_COLLECTION } from '@/app/constants/knowledge';
 import type { ScoredPoint } from '@/app/proto/qdrant/qdrant/ScoredPoint';
 import { ChatHistory } from '@/app/entities/ChatHistory';
 import { Usage } from '@/app/entities/Usage';
+import { Session } from '@/app/entities/Session';
 import { getDataSource } from '@/app/data-source';
 import type { ChatGPTMessage } from '@/types/openai';
 
@@ -15,7 +15,6 @@ import type { QdrantClient } from '../grpc/qdrant';
 import { UsageManager } from '../usage/manager';
 
 import { ChatSessionManager } from './manager';
-import { Session } from '@/app/entities/Session';
 
 interface InternalChatMessage extends ChatGPTMessage {
   id?: string;
@@ -27,8 +26,8 @@ type InternalChatMessages = InternalChatMessage[];
 
 export class ChatSession {
   public id: string = randomUUID();
-  public startedAt: number = Date.now();
-  public messages: InternalChatMessages = getInitalPrompt();
+  public startedAt: number = Math.floor(Date.now() / 1e3);
+  public messages: InternalChatMessages = getInitalPrompt() as InternalChatMessages;
 
   public constructor() {
     this.createOnDatabase();
@@ -41,16 +40,37 @@ export class ChatSession {
     console.debug('[session] receive chat request:', message);
     const wrappedMessage: ChatGPTMessage = {
       role: 'user',
-      content: `(${dayjs().format('YYYY-MM-DD HH:mm:ss')})${message}`,
+      content: message,
     };
     // searching for history
+    let searchRes;
     try {
-      const searchRes = await this.searchHistoryByVector(wrappedMessage);
-      if (searchRes) {
-        console.log('history search res', searchRes);
-      }
+      searchRes = await this.searchHistoryByVector(wrappedMessage);
     } catch (err) {
       console.error('[session] search history by vector failed:', err);
+    }
+    if (searchRes?.id?.uuid) {
+      try {
+        const searchedTarget = await getDataSource()
+          .getRepository(ChatHistory)
+          .createQueryBuilder()
+          .where('uuid = :uuid', { uuid: searchRes.id.uuid })
+          .getOne();
+        if (searchedTarget) {
+          console.debug('[session] search history target', searchedTarget);
+          // message in this session will not be send as history reference
+          if (!this.messages.map((message) => message.id).includes(searchedTarget.uuid)) {
+            this.messages.push(
+              this.hydrateMessage({
+                role: 'system',
+                content: `Emi曾经的回复内容：${searchedTarget.content}`,
+              }),
+            );
+          }
+        }
+      } catch (err) {
+        console.error('[session] get searched history target by uuid failed:', err);
+      }
     }
     // send to openai for completion
     let completeRes;
@@ -72,7 +92,6 @@ export class ChatSession {
     if (!completed) {
       return;
     }
-    completed.content = `(${dayjs().format('YYYY-MM-DD HH:mm:ss')})${completed.content}`;
     const hydrated = [wrappedMessage, completed].map((message) => this.hydrateMessage(message));
     UsageManager.setChatUsage(hydrated[1].id, completeRes.usage);
     this.messages.push(...hydrated);
@@ -84,8 +103,13 @@ export class ChatSession {
   }
 
   public async close() {
-    const endedAt = Date.now();
-    await getDataSource().createQueryBuilder().update().where('id = :id', { id: this.id }).set({ endedAt }).execute();
+    const endedAt = Math.floor(Date.now() / 1e3);
+    await getDataSource()
+      .createQueryBuilder()
+      .update(Session)
+      .set({ endedAt })
+      .where('id = :id', { id: this.id })
+      .execute();
   }
 
   /**
@@ -152,7 +176,7 @@ export class ChatSession {
           resolve(sorted[0]);
         }
       }),
-      new Promise((resolve, reject) => {
+      new Promise((_, reject) => {
         setTimeout(() => {
           reject(new Error('Searching timeout.'));
         }, 10 * 1000);
@@ -168,7 +192,7 @@ export class ChatSession {
     // persist all messages to qdrant
     await Promise.allSettled([
       ...this.messages.map(async (message) => {
-        if (message.persisted || message.role === 'system' || !message.id) {
+        if (message.persisted || message.role !== 'assistant' || !message.id) {
           return;
         }
         if (!ChatSessionManager.grpcClients.clip) {
@@ -200,7 +224,7 @@ export class ChatSession {
                     stringValue: message.content,
                   },
                   created: {
-                    integerValue: message.created,
+                    integerValue: message.created ? Math.floor(message.created / 1e3) : message.created,
                   },
                 },
               },
@@ -216,8 +240,8 @@ export class ChatSession {
         }
         // build history entity
         const history = new ChatHistory();
-        history.content = message.content.split(')')?.[1];
-        history.created = message.created || Date.now();
+        history.content = message.content;
+        history.created = Math.floor((message.created || Date.now()) / 1e3);
         history.role = message.role;
         history.uuid = message.id;
         history.sessionId = ChatSessionManager.getCurrentSession()?.id || '';
@@ -227,6 +251,7 @@ export class ChatSession {
         await dataSource.createQueryBuilder().insert().into(ChatHistory).values(history).execute();
       }),
     ]);
+
     // rewrite the local flag
     this.messages = this.messages.map((message) => {
       if (!message.id) {
