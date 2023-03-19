@@ -21,9 +21,14 @@ interface InternalChatMessage extends ChatGPTMessage {
   id?: string;
   created?: number;
   persisted?: boolean;
+  isInstruction?: boolean;
 }
 
 type InternalChatMessages = InternalChatMessage[];
+
+interface HydrateOptions {
+  isInstruction?: boolean;
+}
 
 export class ChatSession {
   public id: string = randomUUID();
@@ -62,10 +67,13 @@ export class ChatSession {
           // message in this session will not be send as history reference
           if (!this.messages.map((message) => message.id).includes(searchedTarget.uuid)) {
             this.messages.push(
-              this.hydrateMessage({
-                role: 'system',
-                content: `Emi曾经的回复内容：${searchedTarget.content}`,
-              }),
+              this.hydrateMessage(
+                {
+                  role: 'system',
+                  content: `Emi曾经的回复内容：${searchedTarget.content}`,
+                },
+                { isInstruction: true },
+              ),
             );
           }
         }
@@ -96,6 +104,13 @@ export class ChatSession {
     const hydrated = [wrappedMessage, completed].map((message) => this.hydrateMessage(message));
     UsageManager.setChatUsage(hydrated[1].id, completeRes.usage);
     this.messages.push(...hydrated);
+    // filter injected history instruction, reduce the affection on the future messages
+    this.messages = this.messages.filter((message) => {
+      if (message.role === 'system' && message.isInstruction) {
+        return false;
+      }
+      return true;
+    });
     // after a chat interaction completed, persist related messages
     this.persist().catch((err) => {
       console.error('[session] Failed to persist chat messages', err);
@@ -118,12 +133,13 @@ export class ChatSession {
    * @param message Raw message based on ChatGPT message structure
    * @returns Hydrated message
    */
-  private hydrateMessage(message: ChatGPTMessage) {
+  private hydrateMessage(message: ChatGPTMessage, options: HydrateOptions = {}) {
     return {
       ...message,
       created: Date.now(),
       id: randomUUID(),
       persisted: false,
+      isInstruction: options.isInstruction ?? false,
     };
   }
 
