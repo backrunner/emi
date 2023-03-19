@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
+import { load as loadJieba } from '@node-rs/jieba';
 import { handleChatIPCEvents } from './lib/ipc/chat';
 import ProcessManager, { launchBinaries } from './lib/process/manager';
 import { QdrantClient } from './lib/grpc/qdrant';
@@ -27,6 +28,9 @@ app.whenReady().then(async () => {
   // init sql db
   await initDataSource();
 
+  // init jieba
+  loadJieba();
+
   // init program
   handleChatIPCEvents();
 
@@ -35,6 +39,10 @@ app.whenReady().then(async () => {
     title: 'Emi',
     width: 480,
     height: 800,
+    transparent: true,
+    frame: false,
+    resizable: false,
+    closable: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },

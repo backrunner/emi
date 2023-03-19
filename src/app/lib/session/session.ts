@@ -7,6 +7,7 @@ import type { ScoredPoint } from '@/app/proto/qdrant/qdrant/ScoredPoint';
 import { ChatHistory } from '@/app/entities/ChatHistory';
 import { Usage } from '@/app/entities/Usage';
 import { Session } from '@/app/entities/Session';
+import { isRejectionSentence } from '@/app/utils/text';
 import { getDataSource } from '@/app/data-source';
 import type { ChatGPTMessage } from '@/types/openai';
 
@@ -193,6 +194,9 @@ export class ChatSession {
     await Promise.allSettled([
       ...this.messages.map(async (message) => {
         if (message.persisted || message.role !== 'assistant' || !message.id) {
+          return;
+        }
+        if (isRejectionSentence(message.content)) {
           return;
         }
         if (!ChatSessionManager.grpcClients.clip) {
