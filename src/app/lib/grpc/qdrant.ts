@@ -145,8 +145,7 @@ export class QdrantClient {
         {
           collectionName,
           vector,
-          scoreThreshold: 0.7,
-          limit: 5,
+          limit: 10,
         },
         (err, value?: SearchResponse) => {
           if (err) {

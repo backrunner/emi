@@ -7,7 +7,7 @@ import type { ScoredPoint } from '@/app/proto/qdrant/qdrant/ScoredPoint';
 import { ChatHistory } from '@/app/entities/ChatHistory';
 import { Usage } from '@/app/entities/Usage';
 import { Session } from '@/app/entities/Session';
-import { isRejectionSentence } from '@/app/utils/text';
+import { computeKeywordOverlapScore, isRejectionSentence } from '@/app/utils/text';
 import { getDataSource } from '@/app/data-source';
 import type { ChatGPTMessage } from '@/types/openai';
 
@@ -16,6 +16,7 @@ import type { QdrantClient } from '../grpc/qdrant';
 import { UsageManager } from '../usage/manager';
 
 import { ChatSessionManager } from './manager';
+import { SENTENCE_TENDENCY } from '@/app/constants/dicts';
 
 interface InternalChatMessage extends ChatGPTMessage {
   id?: string;
@@ -55,30 +56,14 @@ export class ChatSession {
     } catch (err) {
       console.error('[session] search history by vector failed:', err);
     }
-    if (searchRes?.id?.uuid) {
+    if (Array.isArray(searchRes) && searchRes.length) {
       try {
-        const searchedTarget = await getDataSource()
-          .getRepository(ChatHistory)
-          .createQueryBuilder()
-          .where('uuid = :uuid', { uuid: searchRes.id.uuid })
-          .getOne();
-        if (searchedTarget) {
-          console.debug('[session] search history target', searchedTarget);
-          // message in this session will not be send as history reference
-          if (!this.messages.map((message) => message.id).includes(searchedTarget.uuid)) {
-            this.messages.push(
-              this.hydrateMessage(
-                {
-                  role: 'system',
-                  content: `Emi曾经的回复内容：${searchedTarget.content}`,
-                },
-                { isInstruction: true },
-              ),
-            );
-          }
+        const composedInjection = await this.composeInjection(searchRes, message);
+        if (composedInjection) {
+          this.messages.push(this.hydrateMessage(composedInjection, { isInstruction: true }));
         }
       } catch (err) {
-        console.error('[session] get searched history target by uuid failed:', err);
+        console.error('[session] compose injection failed:', err);
       }
     }
     // send to openai for completion
@@ -159,8 +144,8 @@ export class ChatSession {
    * Searching a related message by vector
    * @param userMessage current user input
    */
-  private async searchHistoryByVector(userMessage: InternalChatMessage): Promise<ScoredPoint | null> {
-    return await Promise.race<[Promise<ScoredPoint | null>, Promise<null>]>([
+  private async searchHistoryByVector(userMessage: InternalChatMessage): Promise<ScoredPoint[] | null> {
+    return await Promise.race<[Promise<ScoredPoint[] | null>, Promise<null>]>([
       // eslint-disable-next-line no-async-promise-executor
       new Promise(async (resolve, reject) => {
         if (!ChatSessionManager.grpcClients.clip) {
@@ -190,7 +175,7 @@ export class ChatSession {
         if (!sorted?.length) {
           resolve(null);
         } else {
-          resolve(sorted[0]);
+          resolve(sorted);
         }
       }),
       new Promise((_, reject) => {
@@ -199,6 +184,42 @@ export class ChatSession {
         }, 10 * 1000);
       }),
     ]);
+  }
+
+  private async composeInjection(points: ScoredPoint[], userInput: string) {
+    let searchedTarget;
+    try {
+      searchedTarget = await getDataSource()
+        .getRepository(ChatHistory)
+        .createQueryBuilder()
+        .where('uuid IN (:...uuid)', { uuid: points.filter((item) => !!item.id?.uuid).map((item) => item.id?.uuid) })
+        .getMany();
+    } catch (err) {
+      console.error('[session] get searched history target by uuid failed:', err);
+      return;
+    }
+    console.debug('[session] search history target:', searchedTarget);
+    // no available results
+    if (!Array.isArray(searchedTarget) || !searchedTarget?.length) {
+      return;
+    }
+    // extract content and compare the keywords
+    const searchedContent = searchedTarget.map((item) => item.content);
+    // compute keyword overlap score
+    const keywordOverlapScores = await computeKeywordOverlapScore(userInput, searchedContent);
+    if (!Array.isArray(keywordOverlapScores) || !keywordOverlapScores) {
+      return;
+    }
+    const [highestScoredOne] = keywordOverlapScores;
+    console.debug('[session] get keyword overlap score:', highestScoredOne);
+    if (!highestScoredOne?.[1]) {
+      return;
+    }
+    const message: InternalChatMessage = {
+      role: 'system',
+      content: `相关的历史对话记录："【Emi：${highestScoredOne[0]}】"`,
+    };
+    return message;
   }
 
   /**
@@ -212,7 +233,9 @@ export class ChatSession {
         if (message.persisted || message.role !== 'assistant' || !message.id) {
           return;
         }
-        if (isRejectionSentence(message.content)) {
+        const rejectionCheckRes = isRejectionSentence(message.content);
+        if (rejectionCheckRes.type === SENTENCE_TENDENCY.REJECTION) {
+          console.debug('[session] rejection sentence detected:', rejectionCheckRes);
           return;
         }
         if (!ChatSessionManager.grpcClients.clip) {

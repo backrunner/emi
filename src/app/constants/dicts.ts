@@ -1,5 +1,6 @@
 export const TENDENCY_SCORE_DICT = [
   { score: 0.1, word: '抱歉' },
+  { score: 0.1, word: '对不起' },
   { score: 0.2, word: '很遗憾' },
   { score: 0.3, word: '恐怕不行' },
   { score: 0.4, word: '不行' },
@@ -35,3 +36,13 @@ export enum SENTENCE_TENDENCY {
   NORMAL = 'normal',
   REJECTION = 'rejection',
 }
+
+export const IGNORED_KEYWORDS = ['Emi'];
+
+export const IGNORED_KEYWORD_MAP = (() => {
+  const map = new Map<string, boolean>();
+  IGNORED_KEYWORDS.forEach((keyword) => {
+    map.set(keyword, true);
+  });
+  return map;
+})();
