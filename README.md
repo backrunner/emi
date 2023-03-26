@@ -1,6 +1,6 @@
 # Emi
 
-A ChatGPT bot with limited long term memory.
+A ChatGPT bot with limited long-term memory.
 
 Tip: the main language of this bot is `Simplified Chinese`.
 

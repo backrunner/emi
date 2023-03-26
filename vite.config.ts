@@ -3,12 +3,23 @@ import { defineConfig } from 'vite';
 import electron from 'vite-plugin-electron';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
+import Icons from 'unplugin-icons/vite';
+import { AnyUIResolver } from '@any-design/anyui/lib/resolver.js';
+import AutoImport from 'unplugin-auto-import/vite';
+import Components from 'unplugin-vue-components/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     vueJsx(),
+    Icons({ autoInstall: true }),
+    AutoImport({
+      resolvers: [AnyUIResolver()],
+    }),
+    Components({
+      resolvers: [AnyUIResolver()],
+    }),
     electron([
       {
         entry: './src/app/main.ts',
@@ -20,7 +31,7 @@ export default defineConfig({
           },
           build: {
             rollupOptions: {
-              external: ['better-sqlite3', 'typeorm'],
+              external: ['better-sqlite3', 'typeorm', '@node-rs/jieba'],
             },
           },
         },
