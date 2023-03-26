@@ -7,6 +7,7 @@ import Icons from 'unplugin-icons/vite';
 import { AnyUIResolver } from '@any-design/anyui/lib/resolver.js';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
+import IconsResolver from 'unplugin-icons/resolver';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,7 +19,7 @@ export default defineConfig({
       resolvers: [AnyUIResolver()],
     }),
     Components({
-      resolvers: [AnyUIResolver()],
+      resolvers: [AnyUIResolver(), IconsResolver()],
     }),
     electron([
       {

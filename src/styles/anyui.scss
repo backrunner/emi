@@ -1,0 +1,8 @@
+@import '@any-design/anyui/styles/theme/vars.scss';
+
+// overwrite colors
+$bg: #fdfafc;
+$primary: #f1b5a1;
+$secondary: #f38d6f;
+@import '@any-design/anyui/styles/theme/set.scss';
+@import '@any-design/anyui/styles/index.scss';

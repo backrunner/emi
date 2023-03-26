@@ -14,7 +14,7 @@ This document may contain some errors. If you do not understand anything or have
 
 ## Background
 
-ChatGPT is a amazing project, but limited by its SaaS business model, it is clear that for a long time in the future, OpenAI will not be able to provide long-term memory services due to the cost considerations.
+ChatGPT is a amazing product, but limited by its SaaS business model, it's clear that for a long time in the future, OpenAI will not be able to provide long-term memory services due to the cost considerations.
 
 But thanks to the open ChatGPT API, we may be able to do this in a local client.
 
@@ -123,7 +123,7 @@ Punish Score = Word Score * Cumulated Length / Total Length * 100
 Final Score = 100 - Punish Score
 ```
 
-If the final score is below 90, we will regard it as a rejection.
+If the final score is below `90`, we will regard it as a rejection.
 
 Why use this formula? Because in the real response, if ChatGPT want to reject user, it will always say things like this in the first part of the sentence:
 
