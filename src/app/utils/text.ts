@@ -12,7 +12,6 @@ export const isRejectionSentence = (text: string) => {
       return;
     }
     const punishScore = wordScore * (1 - cumulatedLength / textLength) * 100;
-    console.log(punishScore);
     score -= punishScore;
     cumulatedLength += word.length;
   });
@@ -33,7 +32,6 @@ export const computeKeywordOverlapScore = (reference: string, contents: string[]
       keywords: extract(content, topN).map((item) => item.keyword),
     };
   });
-  console.log(referenceKeywords, extractedContents);
   const referenceKeywordMap = new Map<string, boolean>(referenceKeywords.map((keyword) => [keyword, true]));
   const scoredContents: [string, number][] = [];
   extractedContents.forEach((extractedContent) => {
