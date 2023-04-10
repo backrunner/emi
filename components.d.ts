@@ -10,7 +10,9 @@ export {}
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AButton: typeof import('@any-design/anyui')['Button']
+    AChat: typeof import('@any-design/anyui')['Chat']
     AInput: typeof import('@any-design/anyui')['Input']
+    ATextarea: typeof import('@any-design/anyui')['Textarea']
     IFaRefresh: typeof import('~icons/fa/refresh')['default']
     IFluentMoreHorizontal24Regular: typeof import('~icons/fluent/more-horizontal24-regular')['default']
     IMingcuteSendPlaneFill: typeof import('~icons/mingcute/send-plane-fill')['default']

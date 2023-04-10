@@ -21,7 +21,7 @@
     "clean-storage": "node ./scripts/clean-storage.js"
   },
   "dependencies": {
-    "@any-design/anyui": "^0.0.44",
+    "@any-design/anyui": "^0.0.48",
     "@grpc/grpc-js": "^1.8.12",
     "@grpc/proto-loader": "^0.7.5",
     "@node-rs/jieba": "^1.6.2",
@@ -30,7 +30,8 @@
     "electron-store": "^8.1.0",
     "lodash": "^4.17.21",
     "marqo": "^0.2.0",
-    "pinia": "^2.0.33",
+    "nanoid": "^4.0.2",
+    "pinia": "^2.0.34",
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.3.12",
     "vue": "^3.2.47",

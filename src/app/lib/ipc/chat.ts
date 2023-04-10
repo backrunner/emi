@@ -1,3 +1,4 @@
+import type { HydratedChatMessage } from '@/global';
 import { ipcMain } from 'electron';
 import { ChatSessionManager } from '../session/manager';
 
@@ -8,6 +9,17 @@ export const handleChatIPCEvents = () => {
       id: session.id,
       messages: session.messages,
     };
+  });
+  ipcMain.handle('session:getCurrentId', () => {
+    const session = ChatSessionManager.createSession();
+    return session?.id;
+  });
+  ipcMain.handle('session:getCurrentMessages', () => {
+    const currentSession = ChatSessionManager.getCurrentSession();
+    if (!currentSession) {
+      return [];
+    }
+    return currentSession.messages.filter((item) => item.role !== 'system') as HydratedChatMessage[];
   });
 
   ipcMain.handle('chat:complete', async (_, message: string) => {

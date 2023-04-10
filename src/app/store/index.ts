@@ -16,13 +16,9 @@ export const secureStore = new Store({
 
 export const userConfigStore = new Store({
   defaults: {
-    user_nickname: '主人',
     payload_on_disk: false,
   },
   schema: {
-    user_nickname: {
-      type: 'string',
-    },
     payload_on_disk: {
       type: 'boolean',
     },

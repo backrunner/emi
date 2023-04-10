@@ -100,17 +100,28 @@ export class ChatSession {
     this.persist().catch((err) => {
       console.error('[session] Failed to persist chat messages', err);
     });
-    return completed;
+    // hydrated[1] is the hydrated completed message
+    return hydrated[1];
   }
 
   public async close() {
-    const endedAt = Math.floor(Date.now() / 1e3);
-    await getDataSource()
-      .createQueryBuilder()
-      .update(Session)
-      .set({ endedAt })
-      .where('id = :id', { id: this.id })
-      .execute();
+    // check if this session is useless
+    if (
+      this.messages.reduce((res, curr) => {
+        return res || (!curr.isInstruction && curr.role !== 'system');
+      }, false)
+    ) {
+      // there's a message that not instruction
+      const endedAt = Math.floor(Date.now() / 1e3);
+      await getDataSource()
+        .createQueryBuilder()
+        .update(Session)
+        .set({ endedAt })
+        .where('id = :id', { id: this.id })
+        .execute();
+    } else {
+      await getDataSource().createQueryBuilder().delete().where('id = :id', { id: this.id }).execute();
+    }
   }
 
   /**

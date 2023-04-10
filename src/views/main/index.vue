@@ -8,10 +8,21 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
+
+import { startNewSession, initSessionMessages } from '@/utils/session';
+
 import DialogTitle from './components/DialogTitle.vue';
 import DialogMain from './components/DialogMain.vue';
 
-const completeChat = (message: string) => {};
+onMounted(async () => {
+  if (await window.native?.getCurrentSessionId()) {
+    // already in a incompleted session
+    await initSessionMessages();
+  } else {
+    await startNewSession();
+  }
+});
 </script>
 
 <style lang="scss" scoped>
