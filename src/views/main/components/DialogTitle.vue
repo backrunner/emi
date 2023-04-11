@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-const handleRefreshClicked = () => {}
+const handleRefreshClicked = () => { }
 </script>
 
 <style lang="scss" scoped>
@@ -31,6 +31,7 @@ const handleRefreshClicked = () => {}
   box-shadow: -1px 2px 16px var(--shadow-6);
   padding: 6px 12px 6px 6px;
   box-sizing: border-box;
+  flex-shrink: 0;
 
   &__character {
     display: flex;

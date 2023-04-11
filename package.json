@@ -21,7 +21,7 @@
     "clean-storage": "node ./scripts/clean-storage.js"
   },
   "dependencies": {
-    "@any-design/anyui": "^0.0.48",
+    "@any-design/anyui": "^0.0.50",
     "@grpc/grpc-js": "^1.8.12",
     "@grpc/proto-loader": "^0.7.5",
     "@node-rs/jieba": "^1.6.2",

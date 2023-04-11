@@ -19,16 +19,20 @@
 
 <script setup lang="ts">
 import { nanoid } from 'nanoid';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
+import { useRefreshableComputed } from '@any-design/anyui';
+import type { AChatMessage } from '@any-design/anyui';
 
 import { useMessageStore } from '@/store/message';
 import { completeChat } from '@/utils/chat';
 
 const messageStore = useMessageStore();
 
-const userInput = ref();
+const { computed: messages, refresh: refreshMessageGetter } = useRefreshableComputed<AChatMessage[]>(() => {
+  return messageStore.messages;
+});
 
-const messages = computed(() => messageStore.messages);
+const userInput = ref();
 
 let messageSending = ref(false);
 
@@ -43,9 +47,10 @@ const handleSendClicked = async () => {
     content: trimmedInput,
     role: 'self',
   });
+  refreshMessageGetter();
+  // send complete request
   messageSending.value = true;
   userInput.value = '';
-  // send complete request
   try {
     const resMessage = await completeChat(trimmedInput);
     if (resMessage) {
@@ -56,6 +61,7 @@ const handleSendClicked = async () => {
   } finally {
     // do unlock
     messageSending.value = false;
+    refreshMessageGetter();
   }
 };
 </script>
@@ -63,6 +69,7 @@ const handleSendClicked = async () => {
 <style lang="scss" scoped>
 .dialog-main {
   width: 100%;
+  max-height: calc(100% - 72px);
   flex: 1;
   display: flex;
   align-items: center;
@@ -71,21 +78,46 @@ const handleSendClicked = async () => {
   background: var(--bg);
   margin-top: 12px;
   border-radius: 28px;
-  box-shadow: 1px 2px 20px var(--shadow-6);
-  padding: 12px 0;
+  box-shadow: 2px 4px 14px var(--shadow-8);
+  padding: 16px 4px;
   box-sizing: border-box;
+  position: relative;
 
   &__list {
     flex: 1;
     margin-bottom: 12px;
     width: 100%;
+    max-height: calc(100% - 52px);
+    position: relative;
 
     .a-chat {
+      :deep(.a-virtual-list)::-webkit-scrollbar {
+        display: none;
+      }
+
+      :deep(.a-virtual-list)::-webkit-scrollbar-thumb {
+        background-color: #dfdfdf;
+      }
+
       :deep(.a-chat__message) {
         .a-chat__content {
           border-radius: 16px;
           padding: 12px 16px;
+          box-shadow: 1px 2px 6px var(--shadow-10);
+          text-shadow: 1px 1px 3px var(--shadow-4);
         }
+      }
+
+      :deep(.a-chat__message--target) {
+        .a-chat__content {
+          background-color: var(--primary-dark-4);
+        }
+      }
+    }
+
+    .a-chat:hover {
+      :deep(.a-virtual-list)::-webkit-scrollbar {
+        display: block;
       }
     }
   }
@@ -94,6 +126,7 @@ const handleSendClicked = async () => {
     width: 100%;
     padding: 0 12px;
     box-sizing: border-box;
+    margin-top: 12px;
 
     .a-textarea {
       position: relative;
