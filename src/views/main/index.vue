@@ -1,7 +1,7 @@
 <template>
   <div class="main">
     <div class="dialog-area">
-      <DialogTitle />
+      <DialogTitle @refresh="recreateSession" />
       <DialogMain />
     </div>
   </div>
@@ -15,12 +15,18 @@ import { startNewSession, initSessionMessages } from '@/utils/session';
 import DialogTitle from './components/DialogTitle.vue';
 import DialogMain from './components/DialogMain.vue';
 
+const recreateSession = async () => {
+  await startNewSession();
+  await initSessionMessages();
+};
+
 onMounted(async () => {
   if (await window.native?.getCurrentSessionId()) {
     // already in a incompleted session
     await initSessionMessages();
   } else {
     await startNewSession();
+    await initSessionMessages();
   }
 });
 </script>

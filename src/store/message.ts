@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-import { reactive } from 'vue';
 import type { AChatMessage } from '@any-design/anyui';
 
 import type { HydratedChatMessage } from '@/global';
@@ -7,7 +6,7 @@ import { transformMessage } from '@/utils/message';
 
 export const useMessageStore = defineStore('messages', {
   state: () => ({
-    messages: reactive<AChatMessage[]>([]),
+    messages: [] as AChatMessage[],
   }),
   actions: {
     addMessage(message: HydratedChatMessage) {
@@ -17,7 +16,7 @@ export const useMessageStore = defineStore('messages', {
       this.messages.push(message);
     },
     setMessages(messages: HydratedChatMessage[]) {
-      this.messages = reactive<AChatMessage[]>(messages.map((message) => transformMessage(message)));
+      this.messages = messages.map((message) => transformMessage(message));
     },
   },
 });

@@ -20,17 +20,13 @@
 <script setup lang="ts">
 import { nanoid } from 'nanoid';
 import { ref } from 'vue';
-import { useRefreshableComputed } from '@any-design/anyui';
-import type { AChatMessage } from '@any-design/anyui';
 
 import { useMessageStore } from '@/store/message';
 import { completeChat } from '@/utils/chat';
+import { storeToRefs } from 'pinia';
 
 const messageStore = useMessageStore();
-
-const { computed: messages, refresh: refreshMessageGetter } = useRefreshableComputed<AChatMessage[]>(() => {
-  return messageStore.messages;
-});
+const { messages } = storeToRefs(messageStore);
 
 const userInput = ref();
 
@@ -47,7 +43,6 @@ const handleSendClicked = async () => {
     content: trimmedInput,
     role: 'self',
   });
-  refreshMessageGetter();
   // send complete request
   messageSending.value = true;
   userInput.value = '';
@@ -61,7 +56,6 @@ const handleSendClicked = async () => {
   } finally {
     // do unlock
     messageSending.value = false;
-    refreshMessageGetter();
   }
 };
 </script>
@@ -69,7 +63,7 @@ const handleSendClicked = async () => {
 <style lang="scss" scoped>
 .dialog-main {
   width: 100%;
-  max-height: calc(100% - 72px);
+  height: calc(100% - 40px);
   flex: 1;
   display: flex;
   align-items: center;
@@ -85,7 +79,6 @@ const handleSendClicked = async () => {
 
   &__list {
     flex: 1;
-    margin-bottom: 12px;
     width: 100%;
     max-height: calc(100% - 52px);
     position: relative;
@@ -101,6 +94,7 @@ const handleSendClicked = async () => {
 
       :deep(.a-chat__message) {
         .a-chat__content {
+          max-width: 86%;
           border-radius: 16px;
           padding: 12px 16px;
           box-shadow: 1px 2px 6px var(--shadow-10);

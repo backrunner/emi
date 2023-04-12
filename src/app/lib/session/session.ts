@@ -108,7 +108,7 @@ export class ChatSession {
     // check if this session is useless
     if (
       this.messages.reduce((res, curr) => {
-        return res || (!curr.isInstruction && curr.role !== 'system');
+        return res || curr.role !== 'system';
       }, false)
     ) {
       // there's a message that not instruction

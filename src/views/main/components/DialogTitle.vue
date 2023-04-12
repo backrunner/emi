@@ -17,7 +17,11 @@
 </template>
 
 <script setup lang="ts">
-const handleRefreshClicked = () => { }
+const emit = defineEmits(['refresh']);
+
+const handleRefreshClicked = () => {
+  emit('refresh');
+}
 </script>
 
 <style lang="scss" scoped>
